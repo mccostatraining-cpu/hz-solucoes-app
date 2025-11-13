@@ -1,0 +1,79 @@
+# ==============================================================================
+# Configuração de Deploy para Railway (railway.toml)
+#
+# Este arquivo define as configurações de build e deploy para o serviço no Railway.
+# As configurações aqui definidas sobrescrevem as configurações do dashboard.
+# Documentação de Referência: https://docs.railway.app/reference/config-as-code
+# ==============================================================================
+
+# [build]
+# Configurações relacionadas ao processo de construção (build) do projeto.
+# Por padrão, o Railway utiliza o Railpack, mas pode ser configurado para Dockerfile
+# ou Nixpacks (depreciado).
+
+[build]
+# builder = "RAILPACK" # Define o builder a ser usado. RAILPACK é o padrão.
+# buildCommand = "npm run build" # Comando de build, se necessário.
+
+# [deploy]
+# Configurações relacionadas ao processo de implantação (deploy) e execução do serviço.
+
+[deploy]
+# Comando de inicialização do serviço.
+# Exemplo para um app Node.js:
+# startCommand = "node dist/index.js"
+# Exemplo para um app Python/Flask:
+# startCommand = "gunicorn app:app"
+
+# ------------------------------------------------------------------------------
+# Healthcheck (Verificação de Saúde)
+# ------------------------------------------------------------------------------
+# healthcheckPath: Caminho HTTP para verificar a saúde do serviço.
+# healthcheckTimeout: Tempo limite em segundos para a verificação.
+healthcheckPath = "/health"
+healthcheckTimeout = 300 # 5 minutos (valor padrão é 300s)
+
+# ------------------------------------------------------------------------------
+# Restart Policy (Política de Reinicialização)
+# ------------------------------------------------------------------------------
+# restartPolicyType: Define como lidar com falhas no deploy.
+#   - "ON_FAILURE": Reinicia apenas em caso de falha (padrão).
+#   - "ALWAYS": Sempre tenta reiniciar.
+#   - "NEVER": Não reinicia.
+# restartPolicyMaxRetries: Número máximo de tentativas de reinicialização.
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# ------------------------------------------------------------------------------
+# Configurações de Rede (Implícitas e Explícitas)
+# ------------------------------------------------------------------------------
+# O Railway gerencia a maior parte da rede automaticamente.
+# Variáveis de ambiente para rede privada são injetadas automaticamente.
+# A configuração de rede pública (domínio) é feita no dashboard.
+# Para configurações avançadas de rede privada (Service Mesh):
+# [deploy.serviceMesh]
+#   port = 3000 # Porta que o serviço expõe internamente.
+
+# ------------------------------------------------------------------------------
+# Variáveis de Ambiente Padrão (Environment Overrides)
+# ------------------------------------------------------------------------------
+# Variáveis de ambiente podem ser definidas por ambiente (ex: staging, production).
+# As variáveis globais devem ser definidas no dashboard do Railway.
+# Este bloco é útil para sobrescrever comandos ou configurações por ambiente.
+
+# Exemplo de sobrescrita para o ambiente de staging:
+# [environments.staging.deploy]
+#   startCommand = "npm run start:staging"
+
+# Exemplo de configuração de porta (se o framework não usar a variável PORT):
+# [environments.default.deploy]
+#   port = 3000 # A porta que o serviço escuta. A variável PORT é injetada.
+
+# ------------------------------------------------------------------------------
+# Configurações de Deploy Teardown (Zero Downtime)
+# ------------------------------------------------------------------------------
+# overlapSeconds: Tempo em segundos que o deploy anterior e o novo se sobrepõem.
+# drainingSeconds: Tempo em segundos entre o envio de SIGTERM e SIGKILL.
+# [deploy.teardown]
+#   overlapSeconds = 60
+#   drainingSeconds = 10
