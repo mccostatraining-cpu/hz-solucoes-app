@@ -9,26 +9,25 @@ nixPkgs = ["nodejs_22"]
 # O Nixpacks detecta automaticamente o pnpm se houver um pnpm-lock.yaml,
 # mas esta configuração garante o uso explícito e otimiza o cache.
 [phases.install]
-cmd = "pnpm install --frozen-lockfile"
+cmd = "npm install"
 
 # Configuração de cache para otimizar o tempo de build
 # O cache é aplicado aos diretórios de dependências do pnpm e ao cache de build.
 [phases.install.cache]
 paths = [
-    "/root/.local/share/pnpm/store", # Cache do pnpm
     "node_modules",
 ]
 
 # Configuração do comando de build
 # Substitua 'pnpm build' pelo comando real de build do seu projeto, se for diferente.
 [phases.build]
-cmd = "pnpm build"
+cmd = "npm run build"
 
 # Configuração do comando de start
 # Substitua 'pnpm start' pelo comando real de start do seu projeto.
 # Geralmente, para aplicações Node.js, é o comando que inicia o servidor.
 [start]
-cmd = "pnpm start"
+cmd = "npm start"
 
 # Otimizações de performance (opcional, mas recomendado)
 # O Nixpacks já aplica otimizações padrão, mas você pode adicionar variáveis de ambiente
