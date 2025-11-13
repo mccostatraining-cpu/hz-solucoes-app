@@ -48,7 +48,7 @@ else
   # - Ruby/Rails: bundle exec rake db:migrate
   
   echo "Executando migrações..."
-  pnpm db:migrate || {
+  npm run db:migrate || {
     echo "AVISO: Falha ao executar migrações, mas continuando..."
   }
   echo "Migrações concluídas com sucesso."
