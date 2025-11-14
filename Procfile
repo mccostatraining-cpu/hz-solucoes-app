@@ -1,1 +1,1 @@
-web: node dist-server/index.cjs
+web: npm start

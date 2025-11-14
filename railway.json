@@ -6,7 +6,7 @@
     "installCommand": "npm install"
   },
   "deploy": {
-    "startCommand": "node dist-server/index.cjs",
+    "startCommand": "npm start",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "ON_FAILURE",
