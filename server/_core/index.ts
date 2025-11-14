@@ -37,7 +37,6 @@ async function startServer() {
     console.log("[Server] Starting server initialization...");
     console.log(`[Server] NODE_ENV: ${process.env.NODE_ENV || "not set"}`);
     console.log(`[Server] PORT: ${process.env.PORT || "not set (will use 3000)"}`);
-    validateEnv();
     
     const app = express();
     const server = createServer(app);
@@ -57,6 +56,30 @@ async function startServer() {
     app.get("/", (_req, res) => {
       res.status(200).json({ status: "ok", message: "Server is running" });
     });
+    
+    // INICIAR O SERVIDOR IMEDIATAMENTE para que o healthcheck funcione
+    const port = Number(process.env.PORT) || 3000;
+    console.log(`[Server] Starting server on port ${port}...`);
+    
+    await new Promise<void>((resolve, reject) => {
+      server.listen(port, "0.0.0.0", () => {
+        console.log(`✅ Server running on http://0.0.0.0:${port}/`);
+        console.log(`✅ Healthcheck available at http://0.0.0.0:${port}/health`);
+        resolve();
+      });
+      
+      server.on("error", (error: NodeJS.ErrnoException) => {
+        if (error.code === "EADDRINUSE") {
+          console.error(`❌ Port ${port} is already in use`);
+        } else {
+          console.error("❌ Server error:", error);
+        }
+        reject(error);
+      });
+    });
+    
+    // Agora que o servidor está rodando, configurar o resto
+    validateEnv();
     
     // Configure body parser with safer default limits
     app.use(express.json({ limit: "5mb" }));
@@ -113,23 +136,7 @@ async function startServer() {
         console.warn("[Server] Failed to setup static files:", error);
       }
     }
-
-    const port = Number(process.env.PORT) || 3000;
-    console.log(`[Server] Starting server on port ${port}...`);
     
-    server.listen(port, "0.0.0.0", () => {
-      console.log(`✅ Server running on http://0.0.0.0:${port}/`);
-      console.log(`✅ Healthcheck available at http://0.0.0.0:${port}/health`);
-    });
-    
-    server.on("error", (error: NodeJS.ErrnoException) => {
-      if (error.code === "EADDRINUSE") {
-        console.error(`❌ Port ${port} is already in use`);
-      } else {
-        console.error("❌ Server error:", error);
-      }
-      process.exit(1);
-    });
 
     const shutdown = async (signal: string) => {
       console.log(`[Server] Received ${signal}, shutting down...`);
