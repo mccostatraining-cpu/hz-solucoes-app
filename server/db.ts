@@ -43,6 +43,18 @@ export async function getDb() {
 	return _db;
 }
 
+export async function closeDb() {
+  if (_pool) {
+    try {
+      await _pool.end();
+    } catch (error) {
+      console.warn("[Database] Failed to close pool:", error);
+    }
+  }
+  _pool = null;
+  _db = null;
+}
+
 export async function upsertUser(user: InsertUser): Promise<void> {
   if (!user.openId) {
     throw new Error("User openId is required for upsert");
@@ -325,6 +337,19 @@ export async function getItems(householdId: number) {
     .from(itemsControl)
     .where(eq(itemsControl.householdId, householdId))
     .orderBy(itemsControl.createdAt);
+}
+
+export async function getItemById(itemId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db
+    .select()
+    .from(itemsControl)
+    .where(eq(itemsControl.id, itemId))
+    .limit(1);
+
+  return rows.length > 0 ? rows[0] : null;
 }
 
 export async function updateItemStatus(
@@ -628,6 +653,32 @@ export async function getInstallmentsByPurchase(purchaseId: number) {
   return db.select().from(purchaseInstallments).where(eq(purchaseInstallments.purchaseId, purchaseId));
 }
 
+export async function getCreditCardPurchaseById(purchaseId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db
+    .select()
+    .from(creditCardPurchases)
+    .where(eq(creditCardPurchases.id, purchaseId))
+    .limit(1);
+
+  return rows.length > 0 ? rows[0] : null;
+}
+
+export async function getInstallmentById(installmentId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db
+    .select()
+    .from(purchaseInstallments)
+    .where(eq(purchaseInstallments.id, installmentId))
+    .limit(1);
+
+  return rows.length > 0 ? rows[0] : null;
+}
+
 export async function markInstallmentPaid(installmentId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -667,6 +718,19 @@ export async function getDebts(householdId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   return db.select().from(debts).where(eq(debts.householdId, householdId));
+}
+
+export async function getDebtById(debtId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db
+    .select()
+    .from(debts)
+    .where(eq(debts.id, debtId))
+    .limit(1);
+
+  return rows.length > 0 ? rows[0] : null;
 }
 
 export async function addDebtPayment(debtId: number, amount: number, paymentDate: Date = new Date(), method: "transfer"|"cash"|"card"|"other" = "transfer") {
@@ -750,6 +814,19 @@ export async function getDueEventsByMonth(householdId: number, year: number, mon
     .from(dueEvents)
     .where(and(eq(dueEvents.householdId, householdId), gte(dueEvents.dueDate, startDate), lte(dueEvents.dueDate, endDate)))
     .orderBy(dueEvents.dueDate);
+}
+
+export async function getDueEventById(eventId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const rows = await db
+    .select()
+    .from(dueEvents)
+    .where(eq(dueEvents.id, eventId))
+    .limit(1);
+
+  return rows.length > 0 ? rows[0] : null;
 }
 
 export async function updateDueEventStatus(eventId: number, status: "pending"|"paid"|"overdue") {

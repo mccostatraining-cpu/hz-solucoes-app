@@ -1,35 +1,23 @@
 # nixpacks.toml
+# NOTA: Este arquivo é usado apenas se o Railway usar Nixpacks (modo legado)
+# O Railway agora usa RAILPACK por padrão, que lê o railway.json
 
 # Configuração da versão do Node.js para 22
-# Isso garante que o ambiente de build e runtime use a versão especificada.
 [phases.setup]
 nixPkgs = ["nodejs_22"]
 
 # Configuração do gerenciador de pacotes para npm
-# O Nixpacks detecta automaticamente o npm se houver um package-lock.json
 [phases.install]
 cmd = "npm install"
 
-# Configuração de cache para otimizar o tempo de build
-# O cache é aplicado aos diretórios de dependências do npm e ao cache de build.
+# Configuração de cache
 [phases.install.cache]
-paths = [
-    "node_modules",
-]
+paths = ["node_modules"]
 
-# Configuração do comando de build
-# Comando de build do projeto
+# Comando de build
 [phases.build]
 cmd = "npm run build"
 
-# Configuração do comando de start
-# Comando de inicialização do servidor Node.js
+# Comando de start
 [start]
-cmd = "npm start"
-
-# Otimizações de performance (opcional, mas recomendado)
-# O Nixpacks já aplica otimizações padrão, mas você pode adicionar variáveis de ambiente
-# específicas para o seu framework ou runtime aqui, se necessário.
-# Exemplo para Next.js:
-# [phases.build.variables]
-# NEXT_TELEMETRY_DISABLED = "1"
+cmd = "node dist-server/index.cjs"

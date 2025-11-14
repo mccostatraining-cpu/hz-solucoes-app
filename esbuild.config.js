@@ -1,47 +1,33 @@
 import { build } from 'esbuild';
-import { readFileSync } from 'fs';
 
-const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
+// Build do servidor para produção (Railway):
+// - Gera um único bundle CommonJS (index.cjs)
+// - Mantém módulos nativos do Node como externos
+// - Inclui os arquivos locais (oauth, context, vite, etc.) dentro do bundle
 
-// Lista de módulos nativos do Node que devem ser externalizados
 const nodeBuiltins = [
-  'node:events', 'node:fs', 'node:path', 'node:http', 'node:url', 'node:crypto',
-  'node:stream', 'node:util', 'node:os', 'node:process', 'node:buffer',
-  'node:querystring', 'node:net', 'node:tls', 'node:dns', 'node:zlib',
-  'node:http2', 'node:perf_hooks', 'node:worker_threads', 'node:child_process',
-  'node:cluster', 'node:dgram', 'node:readline', 'node:repl', 'node:string_decoder',
-  'node:timers', 'node:tty', 'node:v8', 'node:vm', 'node:assert', 'node:console',
-  'node:module', 'node:punycode', 'events', 'fs', 'path', 'http', 'url', 'crypto',
-  'stream', 'util', 'os', 'process', 'buffer', 'querystring', 'net', 'tls', 'dns',
-  'zlib', 'http2', 'perf_hooks', 'worker_threads', 'child_process', 'cluster',
-  'dgram', 'readline', 'repl', 'string_decoder', 'timers', 'tty', 'v8', 'vm',
-  'assert', 'console', 'module', 'punycode'
-];
-
-// Apenas algumas dependências específicas que devem ser externalizadas
-// mysql2 e ws precisam ser externalizadas porque usam módulos nativos do Node
-// IMPORTANTE: não externalizar imports relativos do projeto (./*) para que
-// arquivos como ./oauth, ./context, ./vite etc. sejam empacotados no bundle.
-const externalDeps = [
-  'dotenv/config',
-  'lightningcss',
-  'vite',
-  '@tailwindcss/*',
-  '@babel/*',
-  'mysql2', // Externalizar porque usa módulos nativos
-  'ws'      // Externalizar porque usa módulos nativos
+  'assert', 'buffer', 'child_process', 'cluster', 'console', 'constants',
+  'crypto', 'dgram', 'dns', 'domain', 'events', 'fs', 'http', 'http2',
+  'https', 'module', 'net', 'os', 'path', 'perf_hooks', 'process',
+  'punycode', 'querystring', 'readline', 'repl', 'stream', 'string_decoder',
+  'timers', 'tls', 'tty', 'url', 'util', 'v8', 'vm', 'worker_threads', 'zlib',
+  'node:assert', 'node:buffer', 'node:child_process', 'node:cluster',
+  'node:console', 'node:constants', 'node:crypto', 'node:dgram', 'node:dns',
+  'node:domain', 'node:events', 'node:fs', 'node:http', 'node:http2',
+  'node:https', 'node:module', 'node:net', 'node:os', 'node:path',
+  'node:perf_hooks', 'node:process', 'node:punycode', 'node:querystring',
+  'node:readline', 'node:repl', 'node:stream', 'node:string_decoder',
+  'node:timers', 'node:tls', 'node:tty', 'node:url', 'node:util', 'node:v8',
+  'node:vm', 'node:worker_threads', 'node:zlib'
 ];
 
 build({
   entryPoints: ['server/_core/index.ts'],
   bundle: true,
   platform: 'node',
-  format: 'esm',
-  outfile: 'dist-server/index.js',
-  external: [...nodeBuiltins, ...externalDeps],
-  alias: {
-    '@shared': './shared'
-  }
+  format: 'cjs',
+  outfile: 'dist-server/index.cjs',
+  external: nodeBuiltins
 }).then(() => {
   console.log('Build completed successfully');
 }).catch((error) => {

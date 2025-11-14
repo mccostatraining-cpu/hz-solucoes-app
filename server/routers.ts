@@ -1,4 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
+import { TRPCError } from "@trpc/server";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -37,6 +38,11 @@ import {
   addDueEvent,
   getDueEventsByMonth,
   updateDueEventStatus,
+  getItemById,
+  getCreditCardPurchaseById,
+  getInstallmentById,
+  getDebtById,
+  getDueEventById,
 } from "./db";
 import { notifyExpenseAdded, notifyItemPaid, notifyMonthlySummary } from "./whatsapp";
 
@@ -219,21 +225,24 @@ const itemsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const userHousehold = await getUserHousehold(ctx.user.id);
-      if (!userHousehold) throw new Error("User household not found");
+      if (!userHousehold) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User household not found" });
+      }
 
-      // Buscar o item para pegar o nome e valor
-      const items = await getItems(userHousehold.householdId);
-      const item = items.find((i) => i.id === input.itemId);
-      
+      const item = await getItemById(input.itemId);
+      if (!item || item.householdId !== userHousehold.householdId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Item does not belong to this household" });
+      }
+
       const result = await updateItemStatus(input.itemId, input.status);
-      
-      if (input.status === "paid" && item) {
+
+      if (input.status === "paid") {
         await notifyItemPaid(
           item.itemName,
           item.amount ? item.amount / 100 : undefined
         );
       }
-      
+
       return result;
     }),
 });
@@ -300,13 +309,6 @@ const dashboardRouter = router({
       const totalFixedExpenses = await getTotalFixedExpenses(householdId);
       const revenue = await getDailyRevenueByMonth(householdId, input.year, input.month);
       const totalRevenue = revenue.reduce((sum, r) => sum + r.amount, 0);
-      const projects = await getProjects(householdId);
-
-      const totalProjectsNeeded = projects.reduce(
-        (sum, p) => sum + (p.targetAmount - p.savedAmount),
-        0
-      );
-
       const balance = totalRevenue - totalExpenses - totalFixedExpenses;
 
       return {
@@ -314,8 +316,6 @@ const dashboardRouter = router({
         totalFixedExpenses: totalFixedExpenses / 100,
         totalRevenue: totalRevenue / 100,
         balance: balance / 100,
-        totalProjectsNeeded: totalProjectsNeeded / 100,
-        projectsCount: projects.length,
       };
     }),
 });
@@ -417,14 +417,34 @@ const purchasesRouter = router({
 
   installments: protectedProcedure
     .input(z.object({ purchaseId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      const household = await getUserHousehold(ctx.user.id);
+      if (!household) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User household not found" });
+      }
+
+      const purchase = await getCreditCardPurchaseById(input.purchaseId);
+      if (!purchase || purchase.householdId !== household.householdId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Purchase does not belong to this household" });
+      }
+
       const inst = await getInstallmentsByPurchase(input.purchaseId);
       return inst.map(i => ({ ...i, amount: i.amount / 100 }));
     }),
 
   markPaid: protectedProcedure
     .input(z.object({ installmentId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const household = await getUserHousehold(ctx.user.id);
+      if (!household) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User household not found" });
+      }
+
+      const installment = await getInstallmentById(input.installmentId);
+      if (!installment || installment.householdId !== household.householdId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Installment does not belong to this household" });
+      }
+
       return markInstallmentPaid(input.installmentId);
     }),
 });
@@ -467,13 +487,33 @@ const debtsRouter = router({
 
   addPayment: protectedProcedure
     .input(z.object({ debtId: z.number(), amount: z.number().positive(), paymentDate: z.date().optional(), method: z.enum(["transfer","cash","card","other"]).default("transfer") }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const household = await getUserHousehold(ctx.user.id);
+      if (!household) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User household not found" });
+      }
+
+      const debt = await getDebtById(input.debtId);
+      if (!debt || debt.householdId !== household.householdId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Debt does not belong to this household" });
+      }
+
       return addDebtPayment(input.debtId, Math.round(input.amount * 100), input.paymentDate, input.method);
     }),
 
   payments: protectedProcedure
     .input(z.object({ debtId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      const household = await getUserHousehold(ctx.user.id);
+      if (!household) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User household not found" });
+      }
+
+      const debt = await getDebtById(input.debtId);
+      if (!debt || debt.householdId !== household.householdId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Debt does not belong to this household" });
+      }
+
       const rows = await getDebtPayments(input.debtId);
       return rows.map(r => ({ ...r, amount: r.amount / 100 }));
     }),
@@ -520,8 +560,21 @@ const duesRouter = router({
 
   updateStatus: protectedProcedure
     .input(z.object({ eventId: z.number(), status: z.enum(["pending","paid","overdue"]) }))
-    .mutation(async ({ input }) => updateDueEventStatus(input.eventId, input.status)),
+    .mutation(async ({ ctx, input }) => {
+      const household = await getUserHousehold(ctx.user.id);
+      if (!household) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "User household not found" });
+      }
+
+      const event = await getDueEventById(input.eventId);
+      if (!event || event.householdId !== household.householdId) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Due event does not belong to this household" });
+      }
+
+      return updateDueEventStatus(input.eventId, input.status);
+    }),
 });
+
 // Alerts & summaries
 const alertsRouter = router({
   dailySummary: protectedProcedure

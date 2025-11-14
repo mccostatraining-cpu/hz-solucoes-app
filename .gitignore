@@ -3,9 +3,13 @@
 .pnpm-store/
 
 # Build outputs
+# NOTA: dist-server/ e dist-client/ são gerados durante o build
+# O Railway executará 'npm run build' que cria esses diretórios
 dist/
 build/
 *.dist
+dist-server/
+dist-client/
 
 # Environment variables
 .env

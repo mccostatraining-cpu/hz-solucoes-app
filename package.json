@@ -9,7 +9,7 @@
     "dev:vite": "vite",
     "build": "vite build && npm run build:server",
     "build:server": "node esbuild.config.js",
-    "start": "node dist-server/index.js",
+    "start": "node dist-server/index.cjs",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "check": "tsc --noEmit",

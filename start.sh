@@ -34,24 +34,12 @@ if [ -z "${PORT}" ]; then
 fi
 
 if [ -z "${DATABASE_URL}" ]; then
-  echo "AVISO: Variável de ambiente DATABASE_URL não está definida. Migrações serão ignoradas."
-  # Não é um erro fatal se a aplicação não usa banco de dados, mas é um aviso importante.
+  echo "AVISO: Variável de ambiente DATABASE_URL não está definida."
+  echo "AVISO: A aplicação pode não funcionar corretamente sem banco de dados."
 else
-  echo "DATABASE_URL detectada. Prosseguindo com as migrações..."
-
-  # 3. Execução de Migrações do Banco de Dados
-  # ----------------------------------------------------------------------------
-  # SUBSTITUA o comando abaixo pelo comando de migração do seu framework.
-  # Exemplos:
-  # - Python/Django: python manage.py migrate --noinput
-  # - Node.js/Prisma: npx prisma migrate deploy
-  # - Ruby/Rails: bundle exec rake db:migrate
-  
-  echo "Executando migrações..."
-  npm run db:migrate || {
-    echo "AVISO: Falha ao executar migrações, mas continuando..."
-  }
-  echo "Migrações concluídas com sucesso."
+  echo "DATABASE_URL detectada."
+  echo "NOTA: As migrações do banco devem ser executadas manualmente antes do deploy."
+  echo "NOTA: Use 'drizzle-kit push' ou execute as migrações SQL manualmente."
 fi
 
 # 4. Inicialização do Servidor em Modo Produção
@@ -70,4 +58,4 @@ echo "Iniciando servidor de aplicação em modo de produção na porta ${PORT}..
 # - Node.js/PM2: exec pm2-runtime start dist/server.js --name my-app
 
 # Iniciar servidor Node.js em modo produção
-exec node dist-server/index.js
+exec node dist-server/index.cjs
