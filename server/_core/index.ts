@@ -1,3 +1,8 @@
+// Log imediato para confirmar que o arquivo está sendo executado
+console.log("========================================");
+console.log("🚀 SERVER FILE LOADED - Starting...");
+console.log("========================================");
+
 // Attempt to load .env in development without failing if not present
 try {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -6,8 +11,14 @@ try {
 } catch (error) {
   console.warn("[Env] Failed to load dotenv/config (this may be expected in production)", error);
 }
+
+console.log("[Server] Importing express...");
 import express from "express";
+console.log("[Server] Express imported");
+
+console.log("[Server] Importing http...");
 import { createServer } from "http";
+console.log("[Server] HTTP imported");
 
 // Railway healthcheck: expose /health and bind exactly to process.env.PORT
 
@@ -194,7 +205,12 @@ async function startServer() {
   }
 }
 
+console.log("[Server] Calling startServer()...");
 startServer().catch((error) => {
-  console.error("Failed to start server:", error);
+  console.error("========================================");
+  console.error("❌ FAILED TO START SERVER");
+  console.error("========================================");
+  console.error("Error:", error);
+  console.error("Stack:", error instanceof Error ? error.stack : "No stack trace");
   process.exit(1);
 });
