@@ -8,13 +8,6 @@ try {
 }
 import express from "express";
 import { createServer } from "http";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { appRouter } from "../routers";
-import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
-import { registerWhatsappWebhook } from "../whatsapp-webhook";
-import { getDb, closeDb } from "../db";
 
 // Railway healthcheck: expose /health and bind exactly to process.env.PORT
 
@@ -78,63 +71,79 @@ async function startServer() {
       });
     });
     
-    // Agora que o servidor está rodando, configurar o resto
-    validateEnv();
+    // Agora que o servidor está rodando, carregar e configurar o resto de forma lazy
+    console.log("[Server] Loading additional modules...");
     
     // Configure body parser with safer default limits
     app.use(express.json({ limit: "5mb" }));
     app.use(express.urlencoded({ limit: "5mb", extended: true }));
     console.log("[Server] Body parsers configured (5mb limit)");
     
-    // OAuth callback under /api/oauth/callback
+    // Carregar módulos de forma lazy para não travar a inicialização
     try {
-      registerOAuthRoutes(app);
-      console.log("[Server] OAuth routes registered");
-    } catch (error) {
-      console.warn("[Server] Failed to register OAuth routes:", error);
-    }
-    
-    // WhatsApp webhook endpoint (Twilio)
-    try {
-      registerWhatsappWebhook(app);
-      console.log("[Server] WhatsApp webhook registered");
-    } catch (error) {
-      console.warn("[Server] Failed to register WhatsApp webhook:", error);
-    }
-    
-    // tRPC API
-    try {
-      app.use(
-        "/api/trpc",
-        createExpressMiddleware({
-          router: appRouter,
-          createContext,
-        })
-      );
-      console.log("[Server] tRPC API registered");
-    } catch (error) {
-      console.warn("[Server] Failed to register tRPC API:", error);
-    }
-    
-    // development mode uses Vite, production mode uses static files
-    // Default to production if NODE_ENV is not set (Railway production)
-    const isDevelopment = process.env.NODE_ENV === "development";
-    if (isDevelopment) {
+      validateEnv();
+      
+      // OAuth callback under /api/oauth/callback
       try {
-        console.log("[Server] Setting up Vite for development...");
-        await setupVite(app, server);
-        console.log("[Server] Vite setup complete");
+        const { registerOAuthRoutes } = await import("./oauth");
+        registerOAuthRoutes(app);
+        console.log("[Server] OAuth routes registered");
       } catch (error) {
-        console.warn("[Server] Failed to setup Vite:", error);
+        console.warn("[Server] Failed to register OAuth routes:", error);
       }
-    } else {
+      
+      // WhatsApp webhook endpoint (Twilio)
       try {
-        console.log("[Server] Setting up static file serving for production...");
-        serveStatic(app);
-        console.log("[Server] Static file serving configured");
+        const { registerWhatsappWebhook } = await import("../whatsapp-webhook");
+        registerWhatsappWebhook(app);
+        console.log("[Server] WhatsApp webhook registered");
       } catch (error) {
-        console.warn("[Server] Failed to setup static files:", error);
+        console.warn("[Server] Failed to register WhatsApp webhook:", error);
       }
+      
+      // tRPC API
+      try {
+        const { createExpressMiddleware } = await import("@trpc/server/adapters/express");
+        const { appRouter } = await import("../routers");
+        const { createContext } = await import("./context");
+        
+        app.use(
+          "/api/trpc",
+          createExpressMiddleware({
+            router: appRouter,
+            createContext,
+          })
+        );
+        console.log("[Server] tRPC API registered");
+      } catch (error) {
+        console.warn("[Server] Failed to register tRPC API:", error);
+      }
+      
+      // development mode uses Vite, production mode uses static files
+      // Default to production if NODE_ENV is not set (Railway production)
+      const isDevelopment = process.env.NODE_ENV === "development";
+      if (isDevelopment) {
+        try {
+          console.log("[Server] Setting up Vite for development...");
+          const { setupVite } = await import("./vite");
+          await setupVite(app, server);
+          console.log("[Server] Vite setup complete");
+        } catch (error) {
+          console.warn("[Server] Failed to setup Vite:", error);
+        }
+      } else {
+        try {
+          console.log("[Server] Setting up static file serving for production...");
+          const { serveStatic } = await import("./vite");
+          serveStatic(app);
+          console.log("[Server] Static file serving configured");
+        } catch (error) {
+          console.warn("[Server] Failed to setup static files:", error);
+        }
+      }
+    } catch (error) {
+      console.error("[Server] Error loading additional modules:", error);
+      // Não falhar - o servidor já está rodando e o healthcheck funciona
     }
     
 
@@ -144,8 +153,13 @@ async function startServer() {
         server.close(() => {
           console.log("[Server] HTTP server closed");
         });
-        await closeDb();
-        console.log("[Server] Database pool closed");
+        try {
+          const { closeDb } = await import("../db");
+          await closeDb();
+          console.log("[Server] Database pool closed");
+        } catch (error) {
+          console.warn("[Server] Error closing database:", error);
+        }
       } catch (error) {
         console.error("[Server] Error during shutdown:", error);
       } finally {
