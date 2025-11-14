@@ -3,9 +3,11 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 
 export async function setupVite(app: Express, server: Server) {
+  const __dirname = fileURLToPath(new URL('.', import.meta.url));
   const serverOptions = {
     middlewareMode: true,
     hmr: { server },
@@ -24,7 +26,7 @@ export async function setupVite(app: Express, server: Server) {
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
+        __dirname,
         "../..",
         "client",
         "index.html"
@@ -46,17 +48,42 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "../..", "dist");
+  const __dirname = fileURLToPath(new URL('.', import.meta.url));
+  const distPath = path.resolve(__dirname, "../..", "dist-client");
+  
+  console.log(`Checking for static files in: ${distPath}`);
+  
   if (!fs.existsSync(distPath)) {
-    console.error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`
+    console.warn(
+      `⚠️  Could not find the build directory: ${distPath}`
     );
+    console.warn("⚠️  Static files will not be served, but API routes will still work");
+    // Don't return - let the server start anyway, just without static files
+    // Add a catch-all that returns 404 for non-API routes
+    app.use("*", (req, res, next) => {
+      if (req.path.startsWith("/api") || req.path === "/health") {
+        return next();
+      }
+      res.status(404).json({ error: "Static files not found. Build may have failed." });
+    });
+    return;
   }
 
+  console.log(`✅ Found static files directory: ${distPath}`);
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  // but skip API routes and healthcheck
+  app.use("*", (req, res, next) => {
+    // Skip if it's an API route or healthcheck
+    if (req.path.startsWith("/api") || req.path === "/health") {
+      return next();
+    }
+    const indexPath = path.resolve(distPath, "index.html");
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).json({ error: "index.html not found" });
+    }
   });
 }
