@@ -1,23 +1,22 @@
 # nixpacks.toml
-# NOTA: Este arquivo é usado apenas se o Railway usar Nixpacks (modo legado)
-# O Railway agora usa RAILPACK por padrão, que lê o railway.json
+# Configuração para Railway - Fullstack App (Frontend + Backend)
 
-# Configuração da versão do Node.js para 22
+# Configuração da versão do Node.js
 [phases.setup]
 nixPkgs = ["nodejs_22"]
 
-# Configuração do gerenciador de pacotes para npm
+# Instalar dependências
 [phases.install]
 cmd = "npm install"
 
-# Configuração de cache
+# Cache para otimizar builds
 [phases.install.cache]
 paths = ["node_modules"]
 
-# Comando de build
+# Build: compila frontend (dist-client) e backend (dist-server)
 [phases.build]
 cmd = "npm run build"
 
-# Comando de start
+# Start: inicia o servidor Express que serve API + static files
 [start]
 cmd = "node dist-server/index.cjs"
