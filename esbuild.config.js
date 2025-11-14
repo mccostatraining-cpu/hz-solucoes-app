@@ -20,6 +20,8 @@ const nodeBuiltins = [
 
 // Apenas algumas dependências específicas que devem ser externalizadas
 // mysql2 e ws precisam ser externalizadas porque usam módulos nativos do Node
+// IMPORTANTE: não externalizar imports relativos do projeto (./*) para que
+// arquivos como ./oauth, ./context, ./vite etc. sejam empacotados no bundle.
 const externalDeps = [
   'dotenv/config',
   'lightningcss',
@@ -27,8 +29,7 @@ const externalDeps = [
   '@tailwindcss/*',
   '@babel/*',
   'mysql2', // Externalizar porque usa módulos nativos
-  'ws',     // Externalizar porque usa módulos nativos
-  './*'     // Externalizar imports relativos do projeto
+  'ws'      // Externalizar porque usa módulos nativos
 ];
 
 build({
