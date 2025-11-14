@@ -8,7 +8,7 @@
     "dev": "tsx server/_core/index.ts",
     "dev:vite": "vite",
     "build": "vite build && npm run build:server",
-    "build:server": "esbuild server/_core/index.ts --platform=node --bundle --format=esm --outfile=dist-server/index.js --external:dotenv/config --external:axios --external:jose --external:lightningcss --external:vite --external:@tailwindcss/* --external:@babel/* --external:express --external:mysql2 --external:ws --external:./* --external:node:* --alias:@shared=./shared",
+    "build:server": "esbuild server/_core/index.ts --platform=node --bundle --format=esm --outfile=dist-server/index.js --external:dotenv/config --external:axios --external:jose --external:lightningcss --external:vite --external:@tailwindcss/* --external:@babel/* --external:mysql2 --external:ws --external:./* --external:node:events --external:node:fs --external:node:path --external:node:http --external:node:url --external:node:crypto --external:node:stream --external:node:util --external:node:os --external:node:process --external:node:buffer --external:node:querystring --external:node:net --external:node:tls --external:node:dns --external:node:zlib --external:node:http2 --external:node:perf_hooks --external:node:worker_threads --external:node:child_process --external:node:cluster --external:node:dgram --external:node:readline --external:node:repl --external:node:string_decoder --external:node:timers --external:node:tty --external:node:v8 --external:node:vm --external:node:assert --external:node:console --external:node:module --external:node:punycode --alias:@shared=./shared",
     "start": "node dist-server/index.js",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",

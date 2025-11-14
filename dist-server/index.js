@@ -1,5 +1,5 @@
 // server/_core/index.ts
-import express from "express";
+import express from "../node_modules/express/index.js";
 import { createServer } from "http";
 import { createExpressMiddleware } from "../node_modules/@trpc/server/dist/adapters/express.mjs";
 import { registerOAuthRoutes } from "./oauth";
