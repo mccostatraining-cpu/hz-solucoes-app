@@ -19,7 +19,8 @@
     "coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx server/db.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "audit:fix": "npm audit fix && npm audit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.525.0",
@@ -105,7 +106,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",
     "drizzle-kit": "^0.21.1",
-    "esbuild": "^0.20.2",
+    "esbuild": "^0.24.3",
     "eslint": "^9.13.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
