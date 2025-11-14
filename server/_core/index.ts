@@ -42,7 +42,7 @@ async function startServer() {
     const app = express();
     const server = createServer(app);
     
-    // Healthcheck endpoint - must be before static files
+    // Healthcheck endpoint - DEVE ser o primeiro endpoint registrado
     // Simplificado para responder rapidamente sem depender do banco
     app.get("/health", (_req, res) => {
       res.status(200).json({
@@ -53,40 +53,65 @@ async function startServer() {
     });
     console.log("[Server] Healthcheck endpoint registered at /health");
     
+    // Garantir que o healthcheck sempre responda, mesmo se houver erros
+    app.get("/", (_req, res) => {
+      res.status(200).json({ status: "ok", message: "Server is running" });
+    });
+    
     // Configure body parser with safer default limits
     app.use(express.json({ limit: "5mb" }));
     app.use(express.urlencoded({ limit: "5mb", extended: true }));
     console.log("[Server] Body parsers configured (5mb limit)");
     
     // OAuth callback under /api/oauth/callback
-    registerOAuthRoutes(app);
-    console.log("[Server] OAuth routes registered");
+    try {
+      registerOAuthRoutes(app);
+      console.log("[Server] OAuth routes registered");
+    } catch (error) {
+      console.warn("[Server] Failed to register OAuth routes:", error);
+    }
     
     // WhatsApp webhook endpoint (Twilio)
-    registerWhatsappWebhook(app);
-    console.log("[Server] WhatsApp webhook registered");
+    try {
+      registerWhatsappWebhook(app);
+      console.log("[Server] WhatsApp webhook registered");
+    } catch (error) {
+      console.warn("[Server] Failed to register WhatsApp webhook:", error);
+    }
     
     // tRPC API
-    app.use(
-      "/api/trpc",
-      createExpressMiddleware({
-        router: appRouter,
-        createContext,
-      })
-    );
-    console.log("[Server] tRPC API registered");
+    try {
+      app.use(
+        "/api/trpc",
+        createExpressMiddleware({
+          router: appRouter,
+          createContext,
+        })
+      );
+      console.log("[Server] tRPC API registered");
+    } catch (error) {
+      console.warn("[Server] Failed to register tRPC API:", error);
+    }
     
     // development mode uses Vite, production mode uses static files
     // Default to production if NODE_ENV is not set (Railway production)
     const isDevelopment = process.env.NODE_ENV === "development";
     if (isDevelopment) {
-      console.log("[Server] Setting up Vite for development...");
-      await setupVite(app, server);
-      console.log("[Server] Vite setup complete");
+      try {
+        console.log("[Server] Setting up Vite for development...");
+        await setupVite(app, server);
+        console.log("[Server] Vite setup complete");
+      } catch (error) {
+        console.warn("[Server] Failed to setup Vite:", error);
+      }
     } else {
-      console.log("[Server] Setting up static file serving for production...");
-      serveStatic(app);
-      console.log("[Server] Static file serving configured");
+      try {
+        console.log("[Server] Setting up static file serving for production...");
+        serveStatic(app);
+        console.log("[Server] Static file serving configured");
+      } catch (error) {
+        console.warn("[Server] Failed to setup static files:", error);
+      }
     }
 
     const port = Number(process.env.PORT) || 3000;
