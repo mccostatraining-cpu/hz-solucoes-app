@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx server/_core/index.ts",
     "dev:vite": "vite",
-    "build": "vite build && npm run build:server",
+    "build": "vite build",
     "build:server": "node esbuild.config.js",
     "start": "npx serve dist-client -s -p ${PORT:-3000}",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
