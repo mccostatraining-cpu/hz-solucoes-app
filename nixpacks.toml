@@ -17,6 +17,6 @@ paths = ["node_modules"]
 [phases.build]
 cmd = "npm run build"
 
-# Start: inicia o servidor Express que serve API + static files
+# Start: serve apenas o frontend (arquivos estáticos)
 [start]
-cmd = "node dist-server/index.cjs"
+cmd = "npx serve dist-client -s -p $PORT"

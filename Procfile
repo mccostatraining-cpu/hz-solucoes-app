@@ -1,1 +1,1 @@
-web: npm start
+web: npx serve dist-client -s -p $PORT
