@@ -27,16 +27,25 @@ function validateEnv() {
 
 async function startServer() {
   try {
+    console.log("========================================");
     console.log("[Server] Starting server initialization...");
     console.log(`[Server] NODE_ENV: ${process.env.NODE_ENV || "not set"}`);
     console.log(`[Server] PORT: ${process.env.PORT || "not set (will use 3000)"}`);
+    console.log("========================================");
     
+    console.log("[Server] Creating Express app...");
     const app = express();
+    console.log("[Server] Express app created");
+    
+    console.log("[Server] Creating HTTP server...");
     const server = createServer(app);
+    console.log("[Server] HTTP server created");
     
     // Healthcheck endpoint - DEVE ser o primeiro endpoint registrado
     // Simplificado para responder rapidamente sem depender do banco
+    console.log("[Server] Registering healthcheck endpoint...");
     app.get("/health", (_req, res) => {
+      console.log("[Server] Healthcheck requested");
       res.status(200).json({
         status: "ok",
         timestamp: new Date().toISOString(),
@@ -53,15 +62,25 @@ async function startServer() {
     // INICIAR O SERVIDOR IMEDIATAMENTE para que o healthcheck funcione
     const port = Number(process.env.PORT) || 3000;
     console.log(`[Server] Starting server on port ${port}...`);
+    console.log(`[Server] Binding to 0.0.0.0:${port}...`);
     
     await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        console.error("[Server] Timeout waiting for server to start");
+        reject(new Error("Server start timeout"));
+      }, 10000); // 10 segundos timeout
+      
       server.listen(port, "0.0.0.0", () => {
+        clearTimeout(timeout);
+        console.log("========================================");
         console.log(`✅ Server running on http://0.0.0.0:${port}/`);
         console.log(`✅ Healthcheck available at http://0.0.0.0:${port}/health`);
+        console.log("========================================");
         resolve();
       });
       
       server.on("error", (error: NodeJS.ErrnoException) => {
+        clearTimeout(timeout);
         if (error.code === "EADDRINUSE") {
           console.error(`❌ Port ${port} is already in use`);
         } else {
