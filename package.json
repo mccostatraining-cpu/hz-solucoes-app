@@ -8,7 +8,7 @@
     "dev": "tsx server/_core/index.ts",
     "dev:vite": "vite",
     "build": "vite build && npm run build:server",
-    "build:server": "esbuild server/_core/index.ts --platform=node --bundle --format=esm --outfile=dist-server/index.js --external:dotenv/config --external:axios --external:jose --external:lightningcss --external:vite --external:@tailwindcss/* --external:@babel/* --alias:@shared=./shared",
+    "build:server": "esbuild server/_core/index.ts --platform=node --bundle --format=esm --outfile=dist-server/index.js --external:dotenv/config --external:axios --external:jose --external:lightningcss --external:vite --external:@tailwindcss/* --external:@babel/* --external:express --external:mysql2 --external:ws --external:./* --external:node:* --alias:@shared=./shared",
     "start": "node dist-server/index.js",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
