@@ -90,7 +90,8 @@
     "vaul": "^0.9.0",
     "wouter": "^3.1.0",
     "ws": "^8.16.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "serve": "^14.2.3"
   },
   "devDependencies": {
     "@builder.io/vite-plugin-jsx-loc": "0.1.1",
