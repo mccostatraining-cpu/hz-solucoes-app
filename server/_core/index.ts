@@ -43,25 +43,12 @@ async function startServer() {
     const server = createServer(app);
     
     // Healthcheck endpoint - must be before static files
-    app.get("/health", async (_req, res) => {
-      const dbStatus = {
-        connected: false,
-      } as { connected: boolean; error?: string };
-      try {
-        const db = await getDb();
-        dbStatus.connected = !!db;
-        if (!db) {
-          dbStatus.error = "Database not available";
-        }
-      } catch (error) {
-        dbStatus.connected = false;
-        dbStatus.error = error instanceof Error ? error.message : String(error);
-      }
-
+    // Simplificado para responder rapidamente sem depender do banco
+    app.get("/health", (_req, res) => {
       res.status(200).json({
         status: "ok",
+        timestamp: new Date().toISOString(),
         env: process.env.NODE_ENV || "unknown",
-        db: dbStatus,
       });
     });
     console.log("[Server] Healthcheck endpoint registered at /health");
